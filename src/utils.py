@@ -21,6 +21,13 @@ def entropy(values):
 
 
 def gini(values):
+    """Get the values' Gini index.
+
+    :param values: iterable
+        Categorical values.
+
+    :return: float
+    """
     counts, total = __unique(values)
     result = [pow(n / total, 2) for n in counts]
     return 1 - fsum(result)
@@ -41,6 +48,22 @@ def information_gain(a, b, index=entropy):
     :return: float
     """
     return index(a) - index(b)
+
+
+def bootstrap(n, seed):
+    """Create a list of random integers between 0 and n-1 with length n.
+
+    :param n: int
+        Number of instances.
+
+    :param seed: int
+        Seed for random generator.
+
+    :return: list
+        List with numbers between 0 and n-1 (instances' index)
+    """
+    rs = np.random.RandomState(seed)
+    return rs.randint(low=0, high=n, size=n)
 
 
 def __unique(values):
