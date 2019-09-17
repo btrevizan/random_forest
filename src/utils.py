@@ -1,4 +1,5 @@
 from pandas import read_csv, concat
+from .metrics import Scorer
 from math import ceil
 from os import path
 import numpy as np
@@ -141,8 +142,8 @@ def cross_validate(model, x, y, k, random_state):
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
 
-        performance = 0  # TODO: IMPLEMENT F1-SCORE f1_score(y_test, y_pred)
-        metrics.append(performance)
+        scorer = Scorer(y_test, y_pred)
+        metrics.append(scorer.f1_score())
 
     return metrics
 
