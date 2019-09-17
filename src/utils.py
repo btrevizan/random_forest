@@ -178,8 +178,15 @@ def load(dataset):
         elif feature['name'] == metadata['default_target_attribute']:
             target = int(feature['index'])
 
-    x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False)
     y = data.iloc[:, target]
+
+    # Encode classes to integers
+    sety = enumerate(set(y.values))
+    sety = list(map(lambda e: (e[1], e[0]), sety))
+    sety = dict(sety)
+
+    y = y.apply(lambda e: sety[e], convert_dtype=False)
+    x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False)
 
     return numerical_features, x, y
 
