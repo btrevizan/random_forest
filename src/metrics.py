@@ -35,7 +35,7 @@ class Scorer:
         """False negative (FN) of class 'label'."""
         return sum([self.cm[label, i] for i in range(self.cm.shape[1]) if i != label])
 
-    def accuracy(self, label=0):
+    def accuracy(self, label=1):
         """Calculate accuracy.
 
         :param label: int (optional)
@@ -55,17 +55,6 @@ class Scorer:
         """
         tp = self.tp(label)
         return tp / (tp + self.fn(label))
-
-    def specificity(self, label=0):
-        """Calculate specificity/FPR.
-
-        :param label: int (optional)
-            Class label.
-
-        :return float
-        """
-        tn = self.tn(label)
-        return tn / (tn + self.fp(label))
 
     def precision(self, label=1):
         """Calculate precision.
