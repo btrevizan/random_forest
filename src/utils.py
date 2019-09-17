@@ -5,6 +5,9 @@ import numpy as np
 import json
 
 
+datasets = ['credit_g', 'spambase', 'vertebra_column', 'wine']
+
+
 def entropy(values):
     """Get the values' entropy (measure of randomness).
 
@@ -154,7 +157,6 @@ def load(dataset):
         (metadata, x, y), where metadata is a list of numerical features' indexes, x is a matrix and y is a vector.
     """
     default_path = 'tests/datasets/'
-    datasets = ['credit_g', 'spambase', 'vertebra_column', 'wine']
 
     if dataset not in datasets:
         raise ValueError('{} does not exist. The option are credit_g, spambase, vertebra_column, wine.'.format(dataset))
