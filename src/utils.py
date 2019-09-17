@@ -77,8 +77,8 @@ def stratified_split(y, n_splits, random_state):
     :param random_state: instance of numpy.random.RandomState
         Seed for random generator.
 
-    :return: list of tuples
-        Each element of the list (a tuple) has the instances' index
+    :return: iterator
+        Each element (a tuple) has the instances' index
         for training set and for the test set, respectively.
     """
     sety = set(y)
