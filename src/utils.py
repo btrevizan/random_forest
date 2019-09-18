@@ -88,7 +88,7 @@ def stratified_split(y, n_splits, random_state):
         Each element (a tuple) has the instances' index
         for training set and for the test set, respectively.
     """
-    sety = set(y)
+    sety = sorted(set(y))
     classes_indexes = []
 
     for c in sety:
@@ -181,7 +181,9 @@ def load(dataset):
     y = data.iloc[:, target]
 
     # Encode classes to integers
-    sety = enumerate(set(y.values))
+    sety = set(y.values)
+    sety = sorted(sety)
+    sety = enumerate(sety)
     sety = list(map(lambda e: (e[1], e[0]), sety))
     sety = dict(sety)
 
