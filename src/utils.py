@@ -191,6 +191,19 @@ def load(dataset):
     return numerical_features, x, y
 
 
+def majority_voting(y_pred):
+    """Group predictions by majority voting.
+
+    :param y_pred: list
+        List of predictions.
+
+    :return: int
+        Most voted class.
+    """
+    counts, _ = __unique(y_pred)
+    return np.argmax(counts)
+
+
 def __unique(values):
     _, counts = np.unique(values, return_counts=True)
     return counts, sum(counts)
