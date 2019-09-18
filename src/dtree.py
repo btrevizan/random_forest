@@ -8,26 +8,26 @@ import math
 #   bool
 #   object (string)
 
-def compute_information_gain(attribute, table, classes):
-	pass
+def compute_information_gain(attribute, x, y):
+	return 1
 
 
 class DTree:
-	def __init__(self, table, classes, random_state, attributes):
-		numero_atributos_selecionar = math.ceil(math.sqrt(len(attributes)))
-		atributos_possiveis = list(random_state.choice(attributes, numero_atributos_selecionar, replace = False))
+	def __init__(self, x, y, random_state, possible_attributes):
+		number_attributes_choose = math.ceil(math.sqrt(len(possible_attributes)))
+		attributes_choose = list(random_state.choice(possible_attributes, number_attributes_choose, replace = False))
 
-		melhor_ganho_info = -math.inf
+		best_info_gain = -math.inf
 
-		atributo_escolhido = None
+		selected_attribute = None
 
-		for atributo in atributos_possiveis:
-			ganho_info = compute_information_gain(atributo, table, classes)
-			if (ganho_info > melhor_ganho_info):
-				atributo_escolhido = atributo
-				melhor_ganho_info = ganho_info
+		for attribute in attributes_choose:
+			info_gain = compute_information_gain(attribute, x, y)
+			if (info_gain > best_info_gain):
+				selected_attribute = attribute
+				best_info_gain = info_gain
 
-		self.attribute = atributo_escolhido
+		self.attribute = selected_attribute
 
 
 
