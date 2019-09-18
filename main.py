@@ -12,11 +12,6 @@ data = utils.load(dataset)
 x = data[1]  # table
 y = data[2]  # classes
 
-import sys
-
-print(y[0:10])
-sys.exit()
-
 #
 
 random_state = numpy.random.RandomState(seed)

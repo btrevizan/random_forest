@@ -15,5 +15,7 @@ class RandomForest:
 
 		for b in range(ntrees):
 			bootstrap = list(utils.bootstrap(len(self.x), self.random_state))
-			tree = DTree(bootstrap, self.x, self.y, self.random_state, all_attributes)
+			x_bootstrap_partition = self.x[bootstrap]
+			y_bootstrap_partition = self.y[bootstrap]
+			tree = DTree(x_bootstrap_partition, y_bootstrap_partition, self.random_state, all_attributes)
 			self.trees.append(tree)
