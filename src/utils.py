@@ -185,8 +185,8 @@ def load(dataset):
     sety = list(map(lambda e: (e[1], e[0]), sety))
     sety = dict(sety)
 
-    y = y.apply(lambda e: sety[e], convert_dtype=False)
-    x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False)
+    y = y.apply(lambda e: sety[e], convert_dtype=False).values
+    x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False).values
 
     return numerical_features, x, y
 
