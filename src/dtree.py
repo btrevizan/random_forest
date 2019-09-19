@@ -60,7 +60,7 @@ class DTree:
 	partition_y: numpy.ndarray. Classes of the instances of the partition.
 	possible_attributes: List of integers, indexes of the possible attributes in x for the node.
 	"""
-	def __init__(self, partition_x, partition_y, random_state, possible_attributes):
+	def __init__(self, partition_x, partition_y, random_state, possible_attributes, numeric_attributes_indexes, numeric_attributes_names):
 		global node_id
 		self.id = str(node_id)
 		node_id += 1
@@ -106,6 +106,9 @@ class DTree:
 			self.attribute = selected_attribute
 			self.children = dict()
 
+			if selected_attribute in numeric_attributes_indexes:
+				pass
+
 			# allow attribute repetition in different branches of the tree:
 			new_possible_attributes = copy.copy(possible_attributes)
 			new_possible_attributes.remove(self.attribute)
@@ -127,7 +130,7 @@ class DTree:
 					self.number_of_nodes = 1
 					break
 
-				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes)
+				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes, numeric_attributes_indexes, numeric_attributes_names)
 				self.number_of_nodes += child.number_of_nodes
 				self.children[value] = child
 

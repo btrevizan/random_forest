@@ -5,7 +5,7 @@ import graphviz
 
 seed = 0
 ntrees = 10
-dataset = 'credit_g'
+dataset = 'wine'
 
 #
 
@@ -16,11 +16,11 @@ y = data[2]  # classes
 #
 
 random_state = numpy.random.RandomState(seed)
-random_forest = rf.RandomForest(ntrees, random_state, x, y)
+random_forest = rf.RandomForest(ntrees, random_state, x, y, data[0])
 
 #
 
 dot = graphviz.Digraph()
-random_forest.trees[0].get_graph(dot)
+random_forest.trees[6].get_graph(dot)
 
 dot.render(cleanup=True)
