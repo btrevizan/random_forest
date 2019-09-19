@@ -14,6 +14,10 @@ import src.utils as utils
 #   object (string)
 
 
+# attribute index : sorted split points.
+numeric_attributes_split_points = dict()
+
+
 def class_entropy(y):
 	""" 
 	y: Class vector.
@@ -60,7 +64,7 @@ class DTree:
 	partition_y: numpy.ndarray. Classes of the instances of the partition.
 	possible_attributes: List of integers, indexes of the possible attributes in x for the node.
 	"""
-	def __init__(self, partition_x, partition_y, random_state, possible_attributes, numeric_attributes_indexes, numeric_attributes_names):
+	def __init__(self, partition_x, partition_y, random_state, possible_attributes, numeric_attributes_indexes):
 		global node_id
 		self.id = str(node_id)
 		node_id += 1
@@ -72,6 +76,8 @@ class DTree:
 		self.children = None   # if the node is intermediate: children of the node.
 
 		self.number_of_nodes = 1  # number of nodes in the tree from this node.
+
+		self.attribute_type = None  # numeric or categoric.
 
 		# check for stop conditions:
 		# 1: pure node:
@@ -106,19 +112,30 @@ class DTree:
 			self.attribute = selected_attribute
 			self.children = dict()
 
-			if selected_attribute in numeric_attributes_indexes:
-				pass
-
 			# allow attribute repetition in different branches of the tree:
 			new_possible_attributes = copy.copy(possible_attributes)
 			new_possible_attributes.remove(self.attribute)
 			# 
 
-			attribute_values = set(partition_x[:, self.attribute])
+			if self.attribute in numeric_attributes_indexes:
+				self.attribute_type = "numeric"
+				attribute_values = numeric_attributes_split_points[self.attribute]
+			else:
+				self.attribute_type = "categoric"
+				attribute_values = list(set(partition_x[:, self.attribute]))
 
 			# create one child for each value:
-			for value in attribute_values:
-				indexes = numpy.where(partition_x[:, self.attribute] == value)[0]
+			for i in range(len(attribute_values)):
+
+				if self.attribute_type == "categoric":
+					indexes = numpy.where(partition_x[:, self.attribute] == attribute_values[i])[0]
+					value = attribute_values[i]
+				else:
+					if attribute_values[i] == math.inf:
+						continue
+					indexes = numpy.where( (partition_x[:, self.attribute] > attribute_values[i]) & (partition_x[:, self.attribute] <= attribute_values[i+1]) )[0]
+					value = (attribute_values[i], attribute_values[i+1])  # numeric attribute: value will be range.
+
 				x_with_value = partition_x[indexes]
 				y_with_value = partition_y[indexes]
 
@@ -130,7 +147,7 @@ class DTree:
 					self.number_of_nodes = 1
 					break
 
-				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes, numeric_attributes_indexes, numeric_attributes_names)
+				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes, numeric_attributes_indexes)
 				self.number_of_nodes += child.number_of_nodes
 				self.children[value] = child
 
