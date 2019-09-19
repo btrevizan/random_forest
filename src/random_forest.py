@@ -18,4 +18,5 @@ class RandomForest:
 			x_bootstrap_partition = self.x[bootstrap]
 			y_bootstrap_partition = self.y[bootstrap]
 			tree = DTree(x_bootstrap_partition, y_bootstrap_partition, self.random_state, all_attributes)
+			print(tree.number_of_nodes)
 			self.trees.append(tree)

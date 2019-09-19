@@ -65,6 +65,8 @@ class DTree:
 		self.attribute = None  # if the node is intermediate: the attribute associated.
 		self.children = None   # if the node is intermediate: children of the node.
 
+		self.number_of_nodes = 1  # number of nodes in the tree from this node.
+
 		# check for stop conditions:
 		# 1: pure node:
 		number_of_classes_in_partition = len(set(partition_y))
@@ -79,9 +81,11 @@ class DTree:
 		# compute attribute for the node:
 		else :
 
+			# select attributes possible to choose:
 			number_attributes_choose = math.ceil(math.sqrt(len(possible_attributes)))
 			attributes_choose = list(random_state.choice(possible_attributes, number_attributes_choose, replace = False))
 
+			# compute information gain of all attributes selected:
 			best_info_gain = -math.inf
 			selected_attribute = None
 
@@ -103,6 +107,7 @@ class DTree:
 
 			attribute_values = set(partition_x[:, self.attribute])
 
+			# create one child for each value:
 			for value in attribute_values:
 				indexes = numpy.where(partition_x[:, self.attribute] == value)[0]
 				x_with_value = partition_x[indexes]
@@ -113,7 +118,9 @@ class DTree:
 					self.type = "leaf"
 					self.predicted_class = get_majoritary_class(partition_y)
 					self.children = None
+					self.number_of_nodes = 1
 					break
 
 				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes)
+				self.number_of_nodes += child.number_of_nodes
 				self.children[value] = child

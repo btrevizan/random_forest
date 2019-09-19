@@ -3,7 +3,7 @@ import src.random_forest as rf
 import src.utils as utils
 
 seed = 0
-ntrees = 1
+ntrees = 10
 dataset = 'credit_g'
 
 #
