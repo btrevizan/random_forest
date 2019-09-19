@@ -17,6 +17,9 @@ import src.utils as utils
 # attribute index : sorted split points.
 numeric_attributes_split_points = dict()
 
+# attribute index: possible values.
+categoric_attribute_values = dict()
+
 
 def class_entropy(y):
 	""" 
@@ -63,6 +66,7 @@ class DTree:
 	partition_x: Table with the instances selected for the partition (initially from the bootstrap).
 	partition_y: numpy.ndarray. Classes of the instances of the partition.
 	possible_attributes: List of integers, indexes of the possible attributes in x for the node.
+	numeric_attributes_indexes: List of integers, the indexes of the numeric attributes of the data.
 	"""
 	def __init__(self, partition_x, partition_y, random_state, possible_attributes, numeric_attributes_indexes):
 		global node_id
@@ -122,7 +126,8 @@ class DTree:
 				attribute_values = numeric_attributes_split_points[self.attribute]
 			else:
 				self.attribute_type = "categoric"
-				attribute_values = list(set(partition_x[:, self.attribute]))
+				#attribute_values = list(set(partition_x[:, self.attribute]))  # can cause error when predicting new instances.
+				attribute_values = categoric_attribute_values[self.attribute]
 
 			# create one child for each value:
 			for i in range(len(attribute_values)):
@@ -150,6 +155,27 @@ class DTree:
 				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes, numeric_attributes_indexes)
 				self.number_of_nodes += child.number_of_nodes
 				self.children[value] = child
+
+	def predict(self, instance):
+		"""
+		instance: List with the values of the attributes, in order.
+		"""
+		if self.type == "leaf":
+			return self.predicted_class
+		else:
+			inst_attribute_value = instance[self.attribute]
+			if self.attribute_type == "categoric":
+				try:
+					child = self.children[inst_attribute_value]
+				except KeyError:
+					print(list(self.children.keys()))
+					print(self.attribute, inst_attribute_value)
+					sys.exit(-1)
+				return child.predict(instance)
+			else:
+				for k, v in self.children.items():
+					if (inst_attribute_value > k[0]) and (inst_attribute_value <= k[1]):
+						return v.predict(instance)
 
 
 	def get_graph(self, dot):

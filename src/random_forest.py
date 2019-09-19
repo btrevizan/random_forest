@@ -1,7 +1,7 @@
 import numpy
 import math
 import src.utils as utils
-from src.dtree import DTree, numeric_attributes_split_points
+from src.dtree import DTree, numeric_attributes_split_points, categoric_attribute_values
 
 def compute_numeric_attribues_split_points(values_and_classes, attribute_index):
 	# [0]: value.  [1]: class.
@@ -31,15 +31,17 @@ class RandomForest:
 
 		numeric_attributes = list(zip(*numerical_attributes))
 		numeric_attributes_indexes = [int(x) for x in numeric_attributes[1]]
-		
-		# treat numeric attributes:
-		for i in numeric_attributes_indexes:
-			values = x[:, i]
-			values_and_classes = list(zip(values, y))
 
-			compute_numeric_attribues_split_points(values_and_classes, i)
+		for a in all_attributes:
+			if a in numeric_attributes_indexes:
+				# treat numeric attributes:
+				values = x[:, a]
+				values_and_classes = list(zip(values, y))
+				compute_numeric_attribues_split_points(values_and_classes, a)
 
-		#
+			else:
+				# categoric attributes:
+				categoric_attribute_values[a] = list(set(x[:,a]))
 
 		for b in range(ntrees):
 			bootstrap = list(utils.bootstrap(len(self.x), self.random_state))
@@ -47,4 +49,17 @@ class RandomForest:
 			y_bootstrap_partition = self.y[bootstrap]
 			tree = DTree(x_bootstrap_partition, y_bootstrap_partition, self.random_state, all_attributes, numeric_attributes_indexes)
 			self.trees.append(tree)
+
+
+	def predict(self, instance):
+		"""
+		instance: List with the values of the attributes, in order.
+		"""
+		y = []
+		for tree in self.trees:
+			y.append(tree.predict(instance))
+		return utils.majority_voting(y)
+
+
+
 

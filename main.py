@@ -4,7 +4,7 @@ import src.utils as utils
 import graphviz
 
 seed = 0
-ntrees = 7
+ntrees = 10
 dataset = 'credit_g'
 
 #
@@ -21,6 +21,10 @@ random_forest = rf.RandomForest(ntrees, random_state, x, y, data[0])
 #
 
 dot = graphviz.Digraph()
-random_forest.trees[0].get_graph(dot)
-
+random_forest.trees[1].get_graph(dot)
 dot.render(cleanup=True)
+
+#
+
+import code
+code.interact(local=locals())
