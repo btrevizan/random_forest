@@ -52,6 +52,8 @@ def get_majoritary_class(y):
 	return utils.majority_voting(y)
 
 
+node_id = 0  # ids of the nodes
+
 class DTree:
 	"""
 	partition_x: Table with the instances selected for the partition (initially from the bootstrap).
@@ -59,6 +61,10 @@ class DTree:
 	possible_attributes: List of integers, indexes of the possible attributes in x for the node.
 	"""
 	def __init__(self, partition_x, partition_y, random_state, possible_attributes):
+		global node_id
+		self.id = str(node_id)
+		node_id += 1
+
 		self.type = "intermediate"   # type of node: intermediate or leaf.
 		self.predicted_class = None  # if the node is a leaf: the predicted class.
 
@@ -124,3 +130,14 @@ class DTree:
 				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes)
 				self.number_of_nodes += child.number_of_nodes
 				self.children[value] = child
+
+
+	def get_graph(self, dot):
+		label = str(self.attribute)
+		if self.type == "leaf":
+			label = str(self.predicted_class)
+		dot.node(self.id, label)
+		if self.type == "intermediate":
+			for k, v in self.children.items():
+				v.get_graph(dot)
+				dot.edge(self.id, v.id)
