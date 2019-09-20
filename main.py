@@ -1,11 +1,12 @@
 import numpy
 import src.random_forest as rf
+import src.dtree as dtree
 import src.utils as utils
 import graphviz
 
 seed = 0
 ntrees = 30
-dataset = 'wine'
+dataset = 'credit_g'
 
 #
 
@@ -13,8 +14,8 @@ data = utils.load(dataset)
 x = data[1]  # table
 y = data[2]  # classes
 
-import code
-code.interact(local=locals())
+data[3].remove('class')
+dtree.all_attribute_names = data[3]
 
 #
 

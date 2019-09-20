@@ -20,6 +20,8 @@ numeric_attributes_split_points = dict()
 # attribute index: possible values.
 categoric_attribute_values = dict()
 
+all_attribute_names = []
+
 
 def class_entropy(y):
 	""" 
@@ -188,11 +190,12 @@ class DTree:
 
 
 	def get_graph(self, dot):
-		label = str(self.attribute)
 		if self.type == "leaf":
 			label = str(self.predicted_class)
+		elif self.type == "intermediate":
+			label = all_attribute_names[self.attribute]
 		dot.node(self.id, label)
 		if self.type == "intermediate":
 			for k, v in self.children.items():
 				v.get_graph(dot)
-				dot.edge(self.id, v.id)
+				dot.edge(self.id, v.id, label=str(k))
