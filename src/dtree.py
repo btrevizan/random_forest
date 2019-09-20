@@ -161,4 +161,3 @@ class DecisionTree(Model):
 		for key, child in node.children.items():
 			self.get_graph(dot, child, attr_names)
 			dot.edge(str(node.id), str(child.id))
-

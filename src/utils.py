@@ -179,7 +179,7 @@ def load(dataset):
         Dataset name. Options: credit_g, spambase, vertebra_column, wine
 
     :return: tuple
-        (metadata, x, y), where metadata is a list of numerical features' indexes, x is a matrix and y is a vector.
+        (metadata, x, y, attribute_names), where metadata is a list of numerical features' indexes, x is a matrix and y is a vector, and attribute_names a list of strings.
     """
     default_path = 'tests/datasets/'
 
@@ -195,8 +195,10 @@ def load(dataset):
 
     target = None
     numerical_features = []
+    attribute_names = []
 
     for feature in metadata['features']:
+        attribute_names.append(feature['name'])
         if feature['type'] == 'numeric':
             numerical_features.append((feature['name'], int(feature['index'])))
         elif feature['name'] == metadata['default_target_attribute']:
@@ -213,7 +215,7 @@ def load(dataset):
     y = y.apply(lambda e: sety[e], convert_dtype=False).values
     x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False).values
 
-    return numerical_features, x, y
+    return numerical_features, x, y, attribute_names
 
 
 def get_majority_class(y_pred):
