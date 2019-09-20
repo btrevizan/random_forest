@@ -34,17 +34,31 @@ def class_entropy(y):
 	return entropy
 
 
-def attribute_entropy(attribute, partition_x, partition_y):
+def attribute_entropy(attribute, partition_x, partition_y, is_numeric):
 	"""
 	attribute: integer. Index of the attribute in partition_x to compute entropy for information gain.
 	partition_x: Instances from the table.
 	partition_y: Classes of the instances from the table.
+	is_numeric: Boolean. Information if the attribute is numeric.
 	"""
-	attribute_values = set(partition_x[:, attribute])
+	if not is_numeric:
+		attribute_values = list(set(partition_x[:, attribute]))
+	else:
+		attribute_values = numeric_attributes_split_points[attribute]
 	partition_size = len(partition_x)
 	entropy = 0.0
-	for value in attribute_values:
-		indexes = numpy.where(partition_x[:, attribute] == value)[0]
+	for i in range(len(attribute_values)):
+		if is_numeric and attribute_values[i] == math.inf:
+			continue  # skip inf.
+
+		if not is_numeric:
+			indexes = numpy.where(partition_x[:, attribute] == attribute_values[i])[0]
+		else:
+			indexes = numpy.where( (partition_x[:, attribute] > attribute_values[i]) & (partition_x[:, attribute] <= attribute_values[i+1]) )[0]
+
+		if len(indexes) == 0:
+			continue
+
 		instances_with_value = partition_x[indexes]
 		weight = len(instances_with_value) / partition_size
 		entropy += weight * class_entropy(partition_y[indexes])
@@ -74,7 +88,7 @@ class DTree:
 		node_id += 1
 
 		self.type = "intermediate"   # type of node: intermediate or leaf.
-		self.predicted_class = None  # if the node is a leaf: the predicted class.
+		self.predicted_class = get_majoritary_class(partition_y)  # if the node is a leaf: the predicted class.
 
 		self.attribute = None  # if the node is intermediate: the attribute associated.
 		self.children = None   # if the node is intermediate: children of the node.
@@ -92,7 +106,6 @@ class DTree:
 		# 2: possible_attributes is empty:
 		elif len(possible_attributes) == 0:
 			self.type = "leaf"
-			self.predicted_class = get_majoritary_class(partition_y)
 
 		# compute attribute for the node:
 		else :
@@ -108,7 +121,7 @@ class DTree:
 			partition_entropy = class_entropy(partition_y)
 
 			for attribute in attributes_choose:
-				info_gain = partition_entropy - attribute_entropy(attribute, partition_x, partition_y)
+				info_gain = partition_entropy - attribute_entropy(attribute, partition_x, partition_y, (attribute in numeric_attributes_indexes))
 				if (info_gain > best_info_gain):
 					selected_attribute = attribute
 					best_info_gain = info_gain
@@ -126,8 +139,7 @@ class DTree:
 				attribute_values = numeric_attributes_split_points[self.attribute]
 			else:
 				self.attribute_type = "categoric"
-				#attribute_values = list(set(partition_x[:, self.attribute]))  # can cause error when predicting new instances.
-				attribute_values = categoric_attribute_values[self.attribute]
+				attribute_values = list(set(partition_x[:, self.attribute]))
 
 			# create one child for each value:
 			for i in range(len(attribute_values)):
@@ -135,7 +147,7 @@ class DTree:
 				if self.attribute_type == "categoric":
 					indexes = numpy.where(partition_x[:, self.attribute] == attribute_values[i])[0]
 					value = attribute_values[i]
-				else:
+				elif self.attribute_type == "numeric":
 					if attribute_values[i] == math.inf:
 						continue
 					indexes = numpy.where( (partition_x[:, self.attribute] > attribute_values[i]) & (partition_x[:, self.attribute] <= attribute_values[i+1]) )[0]
@@ -147,7 +159,6 @@ class DTree:
 				# check for stop condition: one of the resulting partitions is empty:
 				if len(x_with_value) == 0:
 					self.type = "leaf"
-					self.predicted_class = get_majoritary_class(partition_y)
 					self.children = None
 					self.number_of_nodes = 1
 					break
@@ -165,13 +176,11 @@ class DTree:
 		else:
 			inst_attribute_value = instance[self.attribute]
 			if self.attribute_type == "categoric":
-				try:
+				if not inst_attribute_value in self.children:  # value of attribute not present in children:
+					return self.predicted_class  # intermediate predicted class.
+				else:
 					child = self.children[inst_attribute_value]
-				except KeyError:
-					print(list(self.children.keys()))
-					print(self.attribute, inst_attribute_value)
-					sys.exit(-1)
-				return child.predict(instance)
+					return child.predict(instance)
 			else:
 				for k, v in self.children.items():
 					if (inst_attribute_value > k[0]) and (inst_attribute_value <= k[1]):

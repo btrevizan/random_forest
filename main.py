@@ -4,14 +4,17 @@ import src.utils as utils
 import graphviz
 
 seed = 0
-ntrees = 10
-dataset = 'credit_g'
+ntrees = 30
+dataset = 'wine'
 
 #
 
 data = utils.load(dataset)
 x = data[1]  # table
 y = data[2]  # classes
+
+import code
+code.interact(local=locals())
 
 #
 
@@ -20,11 +23,10 @@ random_forest = rf.RandomForest(ntrees, random_state, x, y, data[0])
 
 #
 
-dot = graphviz.Digraph()
-random_forest.trees[1].get_graph(dot)
-dot.render(cleanup=True)
+for i in range(5):
+	dot = graphviz.Digraph(name=str(i))
+	random_forest.trees[i].get_graph(dot)
+	dot.render(cleanup=True)
 
 #
 
-import code
-code.interact(local=locals())
