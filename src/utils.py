@@ -176,8 +176,7 @@ def load(dataset):
     for feature in metadata['features']:
         attribute_names.append(feature['name'])
         if feature['type'] == 'numeric':
-            #numerical_features.append(feature['name'])
-            numerical_features.append( (feature['name'], feature['index']) )  # feature indexes start from 0.
+            numerical_features.append((feature['name'], int(feature['index'])))
         elif feature['name'] == metadata['default_target_attribute']:
             target = int(feature['index'])
 
