@@ -17,12 +17,36 @@ def entropy(values):
 
     :return: float
     """
-    counts, total = __unique(values)
+    counts, total = __unique_counts(values)
 
     result = 0
     for n in counts:
         p = n / total
         result = result - p * np.log2(p)
+
+    return result
+
+
+def entropy_attr(values, class_values):
+    """Get the values' mean entropy (measure of randomness).
+
+    :param values: iterable
+        Categorical values.
+
+    :param class_values: iterable
+        Labels.
+
+    :return: float
+    """
+    class_values = np.array(class_values)
+
+    attr_values, counts = np.unique(values, return_counts=True)
+    total = np.sum(counts)
+
+    result = 0
+    for attr_value, count in zip(attr_values, counts):
+        attr_value_indexes = np.where(values == attr_value)[0]
+        result = result + (count / total) * entropy(class_values[attr_value_indexes])
 
     return result
 
@@ -35,26 +59,26 @@ def gini(values):
 
     :return: float
     """
-    counts, total = __unique(values)
+    counts, total = __unique_counts(values)
     result = [pow(n / total, 2) for n in counts]
     return 1 - np.sum(result)
 
 
-def information_gain(class_entropy, b, index=entropy):
-    """Calculate the information gain using an index function.
+def information_gain(class_entropy, attr_values, class_values):
+    """Calculate the information gain using entropy.
 
     :param class_entropy: float
-        Target value's entropy.
+        entropy(y)
 
-    :param b: iterable
+    :param attr_values: iterable
         Categorical values.
 
-    :param index: list->float (default entropy)
-        Index function (entropy or gini).
+    :param class_values: iterable
+        Labels.
 
     :return: float
     """
-    return class_entropy - index(b)
+    return class_entropy - entropy_attr(attr_values, class_values)
 
 
 def bootstrap(n, random_state):
@@ -181,8 +205,7 @@ def load(dataset):
     y = data.iloc[:, target]
 
     # Encode classes to integers
-    sety = set(y.values)
-    sety = sorted(sety)
+    sety = np.unique(y.values)
     sety = enumerate(sety)
     sety = list(map(lambda e: (e[1], e[0]), sety))
     sety = dict(sety)
@@ -193,7 +216,7 @@ def load(dataset):
     return numerical_features, x, y
 
 
-def majority_voting(y_pred):
+def get_majority_class(y_pred):
     """Group predictions by majority voting.
 
     :param y_pred: list
@@ -202,10 +225,10 @@ def majority_voting(y_pred):
     :return: int
         Most voted class.
     """
-    counts, _ = __unique(y_pred)
+    counts, _ = __unique_counts(y_pred)
     return np.argmax(counts)
 
 
-def __unique(values):
+def __unique_counts(values):
     _, counts = np.unique(values, return_counts=True)
     return counts, sum(counts)

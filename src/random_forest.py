@@ -1,4 +1,4 @@
-import numpy
+from .model import Model
 import math
 import src.utils as utils
 from src.dtree import DTree, numeric_attributes_split_points
@@ -18,7 +18,7 @@ def compute_numeric_attribues_split_points(values_and_classes, attribute_index):
 
 
 
-class RandomForest:
+class RandomForest(Model):
 	def __init__(self, ntrees, random_state, x, y, numerical_attributes):
 		self.ntrees = ntrees
 		self.random_state = random_state

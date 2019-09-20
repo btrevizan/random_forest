@@ -1,163 +1,164 @@
-import math
-import collections
-import copy
-import numpy
-import sys
+from collections import namedtuple
 import src.utils as utils
-
-# Attribute types:
-#   float64
-#   int64
-#   float32
-#   int8
-#   bool
-#   object (string)
+from .model import Model
+from copy import copy
+import numpy as np
+import math
 
 
-# attribute index : sorted split points.
-numeric_attributes_split_points = dict()
+Node = namedtuple('Node', ['id', 'value', 'rule', 'children'])
+"""Node representation as a named tuple.
+
+:attr id: int
+	Node's id number.
+	
+:attr attribute: int
+	Attribute's index or predicted class for leafs.
+
+:attr rule: function
+	Node's rule to map the attribute value in one of the children's key.
+
+:attr children: dict
+	Node's children, where: 
+		- key: an attribute's value
+		- value: Node
+"""
 
 
-def class_entropy(y):
-	""" 
-	y: Class vector.
-	"""
-	total_instances = len(y)
-	entropy = 0.0
-	for k, v in collections.Counter(y).items():
-		pk = v / total_instances
-		entropy += pk * numpy.log2(pk)
-	entropy *= -1
-	return entropy
+class DecisionTree(Model):
+	"""Represent a decision tree."""
 
+	def __init__(self, random_state, numerical_attributes_indexes=[]):
+		"""Initialize the decision tree. It does not fit the model. For that, you need to call fit(x, y).
 
-def attribute_entropy(attribute, partition_x, partition_y):
-	"""
-	attribute: integer. Index of the attribute in partition_x to compute entropy for information gain.
-	partition_x: Instances from the table.
-	partition_y: Classes of the instances from the table.
-	"""
-	attribute_values = set(partition_x[:, attribute])
-	partition_size = len(partition_x)
-	entropy = 0.0
-	for value in attribute_values:
-		indexes = numpy.where(partition_x[:, attribute] == value)[0]
-		instances_with_value = partition_x[indexes]
-		weight = len(instances_with_value) / partition_size
-		entropy += weight * class_entropy(partition_y[indexes])
+		:param numerical_attributes_indexes: list (default [])
+			List of numeric attributes' index.
 
-	return entropy
+		:param random_state: instance of numpy.random.RandomState
+			Seed for random generator.
+		"""
+		self.__tree = None
+		self.__node_id = 0
+		self.__random_state = random_state
+		self.__numerical_attributes_indexes = numerical_attributes_indexes
 
+	@property
+	def node_id(self):
+		id_number = self.__node_id
+		self.__node_id += 1
+		return id_number
 
-def get_majoritary_class(y):
-	"""
-	numpy.ndarray. Classes of the instances of the partition.
-	"""
-	return utils.majority_voting(y)
+	def is_leaf(self, node):
+		return len(node.children) == 0
 
+	def fit(self, x, y) -> None:
+		available_attributes = list(range(x.shape[1]))
+		self.__tree = self.__make_node(x, y, available_attributes)
 
-node_id = 0  # ids of the nodes
+	def predict(self, x) -> list:
+		if not self.__tree:
+			raise ValueError("You need to train the model first.")
 
-class DTree:
-	"""
-	partition_x: Table with the instances selected for the partition (initially from the bootstrap).
-	partition_y: numpy.ndarray. Classes of the instances of the partition.
-	possible_attributes: List of integers, indexes of the possible attributes in x for the node.
-	"""
-	def __init__(self, partition_x, partition_y, random_state, possible_attributes, numeric_attributes_indexes):
-		global node_id
-		self.id = str(node_id)
-		node_id += 1
+		x = np.array(x)
+		return [self.__find_leaf(x[i, :], self.__tree) for i in range(x.shape[0])]
 
-		self.type = "intermediate"   # type of node: intermediate or leaf.
-		self.predicted_class = None  # if the node is a leaf: the predicted class.
+	def __find_leaf(self, instance, node):
+		if self.is_leaf(node):
+			return node.value
 
-		self.attribute = None  # if the node is intermediate: the attribute associated.
-		self.children = None   # if the node is intermediate: children of the node.
+		value = node.rule(instance[node.value])
+		return self.__find_leaf(instance, node.children[value])
 
-		self.number_of_nodes = 1  # number of nodes in the tree from this node.
+	def __make_node(self, x, y, available_attributes):
+		sety = np.unique(y)
 
-		self.attribute_type = None  # numeric or categoric.
+		# Subset has only one class, so stop recursion
+		if len(sety) == 1:
+			return Node(self.node_id, sety[0], None, {})
 
-		# check for stop conditions:
-		# 1: pure node:
-		number_of_classes_in_partition = len(set(partition_y))
-		if (number_of_classes_in_partition == 1):
-			self.type = "leaf"
-			self.predicted_class = partition_y[0]
-		# 2: possible_attributes is empty:
-		elif len(possible_attributes) == 0:
-			self.type = "leaf"
-			self.predicted_class = get_majoritary_class(partition_y)
+		# There are no more attributes to choose from, so stop recursion
+		if x.shape[1] == 0:
+			return Node(self.node_id, utils.get_majority_class(y), None, {})
 
-		# compute attribute for the node:
-		else :
+		# Select the best attribute and if it is numerical, get threshold
+		attribute, threshold = self.__select_attribute(x, y, available_attributes)
+		new_available_attributes = copy(available_attributes)
+		new_available_attributes.remove(attribute)
 
-			# select attributes possible to choose:
-			number_attributes_choose = math.ceil(math.sqrt(len(possible_attributes)))
-			attributes_choose = list(random_state.choice(possible_attributes, number_attributes_choose, replace = False))
+		# Select attribute's values and rule
+		if attribute in self.__numerical_attributes_indexes:
+			rule = self.__get_numerical_rule(threshold)
+			attribute_values = np.zeros((x.shape[0],))
+			attribute_values[rule(x[:, attribute])] = 1
+		else:
+			rule = self.__get_categorical_rule()
+			attribute_values = x[:, attribute]
 
-			# compute information gain of all attributes selected:
-			best_info_gain = -math.inf
-			selected_attribute = None
+		children = {}
+		attribute_unique_values = np.unique(attribute_values)
 
-			partition_entropy = class_entropy(partition_y)
+		for value in attribute_unique_values:
+			attr_value_indexes = np.where(attribute_values == value)[0]
+			children[value] = self.__make_node(x[attr_value_indexes, :], y[attr_value_indexes], new_available_attributes)
 
-			for attribute in attributes_choose:
-				info_gain = partition_entropy - attribute_entropy(attribute, partition_x, partition_y)
-				if (info_gain > best_info_gain):
-					selected_attribute = attribute
-					best_info_gain = info_gain
+		return Node(self.node_id, attribute, rule, children)
 
-			self.attribute = selected_attribute
-			self.children = dict()
+	def __select_attribute(self, x, y, available_attributes):
+		# Select √m attributes randomly
+		n_possible_attr = math.sqrt(len(available_attributes))
+		possible_attributes = self.__random_state.choice(available_attributes, math.ceil(n_possible_attr), replace=False)
+		class_entropy = utils.entropy(y)
 
-			# allow attribute repetition in different branches of the tree:
-			new_possible_attributes = copy.copy(possible_attributes)
-			new_possible_attributes.remove(self.attribute)
-			# 
-
-			if self.attribute in numeric_attributes_indexes:
-				self.attribute_type = "numeric"
-				attribute_values = numeric_attributes_split_points[self.attribute]
+		# Compute information gain for each attribute and get the maximum gain index
+		gains = []
+		thresholds = []
+		for j in possible_attributes:
+			if j in self.__numerical_attributes_indexes:
+				gain, threshold = self.__numerical_information_gain(class_entropy, x[:, j], y)
 			else:
-				self.attribute_type = "categoric"
-				attribute_values = list(set(partition_x[:, self.attribute]))
+				gain, threshold = utils.information_gain(class_entropy, x[:, j], y), None
 
-			# create one child for each value:
-			for i in range(len(attribute_values)):
+			gains.append(gain)
+			thresholds.append(thresholds)
 
-				if self.attribute_type == "categoric":
-					indexes = numpy.where(partition_x[:, self.attribute] == attribute_values[i])[0]
-					value = attribute_values[i]
-				else:
-					if attribute_values[i] == math.inf:
-						continue
-					indexes = numpy.where( (partition_x[:, self.attribute] > attribute_values[i]) & (partition_x[:, self.attribute] <= attribute_values[i+1]) )[0]
-					value = (attribute_values[i], attribute_values[i+1])  # numeric attribute: value will be range.
+		max_gain_i = np.argmax(gains)
+		return possible_attributes[max_gain_i], thresholds[max_gain_i]
 
-				x_with_value = partition_x[indexes]
-				y_with_value = partition_y[indexes]
+	def __numerical_information_gain(self, class_entropy, x, y):
+		threshold = None
+		discretized_x = None
+		max_gain = -math.inf
 
-				# check for stop condition: one of the resulting partitions is empty:
-				if len(x_with_value) == 0:
-					self.type = "leaf"
-					self.predicted_class = get_majoritary_class(partition_y)
-					self.children = None
-					self.number_of_nodes = 1
-					break
+		for t in self.__get_thresholds(x, y):
+			new_x = np.zeros(x.shape)
+			new_x[x > t] = 1
 
-				child = DTree(x_with_value, y_with_value, random_state, new_possible_attributes, numeric_attributes_indexes)
-				self.number_of_nodes += child.number_of_nodes
-				self.children[value] = child
+			gain = utils.information_gain(class_entropy, new_x, y)
+			if gain > max_gain:
+				threshold = t
+				max_gain = gain
+				discretized_x = new_x
 
+		return utils.information_gain(class_entropy, discretized_x, y), threshold
 
-	def get_graph(self, dot):
-		label = str(self.attribute)
-		if self.type == "leaf":
-			label = str(self.predicted_class)
-		dot.node(self.id, label)
-		if self.type == "intermediate":
-			for k, v in self.children.items():
-				v.get_graph(dot)
-				dot.edge(self.id, v.id)
+	def __get_thresholds(self, x, y):
+		new_y = y[np.argsort(x)]
+		return [(x[i - 1] + x[i]) / 2 for i in range(1, len(new_y)) if new_y[i - 1] != new_y[i]]
+
+	def __get_categorical_rule(self, value=None):
+		return lambda x: x
+
+	def __get_numerical_rule(self, value):
+		return lambda x: x > value
+
+	def get_graph(self, dot, node=None, attr_names=None):
+		if not node:
+			node = self.__tree
+
+		label = (attr_names[node.value] if attr_names else str(node.value)) if len(node.children) else str(node.value)
+		dot.node(str(node.id), label)
+
+		for key, child in node.children.items():
+			self.get_graph(dot, child, attr_names)
+			dot.edge(str(node.id), str(child.id))
+
