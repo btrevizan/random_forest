@@ -198,11 +198,13 @@ def load(dataset):
     attribute_names = []
 
     for feature in metadata['features']:
-        attribute_names.append(feature['name'])
         if feature['type'] == 'numeric':
             numerical_attributes.append(int(feature['index']))
+            attribute_names.append(feature['name'])
         elif feature['name'] == metadata['default_target_attribute']:
             target = int(feature['index'])
+        else:
+            attribute_names.append(feature['name'])
 
     y = data.iloc[:, target]
 
