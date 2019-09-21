@@ -119,7 +119,7 @@ class DecisionTree(Model):
 				gain, threshold = utils.information_gain(class_entropy, x[:, j], y), None
 
 			gains.append(gain)
-			thresholds.append(thresholds)
+			thresholds.append(threshold)
 
 		max_gain_i = np.argmax(gains)
 		return possible_attributes[max_gain_i], thresholds[max_gain_i]
@@ -129,7 +129,8 @@ class DecisionTree(Model):
 		discretized_x = None
 		max_gain = -math.inf
 
-		for t in self.__get_thresholds(x, y):
+		thresholds = self.__get_thresholds(x, y)
+		for t in thresholds:
 			new_x = np.zeros(x.shape)
 			new_x[x > t] = 1
 
@@ -149,7 +150,7 @@ class DecisionTree(Model):
 		return lambda x: x
 
 	def __get_numerical_rule(self, value):
-		return lambda x: x > value
+		return lambda x: (x > value)
 
 	def get_graph(self, dot, node=None, attr_names=None):
 		if not node:
