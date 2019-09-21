@@ -194,13 +194,13 @@ def load(dataset):
     data = read_csv(data_path, header=0)
 
     target = None
-    numerical_features = []
+    numerical_attributes = []
     attribute_names = []
 
     for feature in metadata['features']:
         attribute_names.append(feature['name'])
         if feature['type'] == 'numeric':
-            numerical_features.append((feature['name'], int(feature['index'])))
+            numerical_attributes.append(int(feature['index']))
         elif feature['name'] == metadata['default_target_attribute']:
             target = int(feature['index'])
 
@@ -215,7 +215,7 @@ def load(dataset):
     y = y.apply(lambda e: sety[e], convert_dtype=False).values
     x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False).values
 
-    return numerical_features, x, y, attribute_names
+    return numerical_attributes, attribute_names, x, y
 
 
 def get_majority_class(y_pred):

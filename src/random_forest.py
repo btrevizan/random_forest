@@ -1,64 +1,40 @@
-from .model import Model
-import math
+from src.dtree import DecisionTree
 import src.utils as utils
-from src.dtree import DTree, numeric_attributes_split_points, categoric_attribute_values
-
-def compute_numeric_attribues_split_points(values_and_classes, attribute_index):
-	# [0]: value.  [1]: class.
-	values_and_classes.sort(key=lambda x: x[0])
-	all_split_points = set()
-	for i in range(1, len(values_and_classes)):
-		if values_and_classes[i][1] != values_and_classes[i-1][1]:  # two consecutive different classes.
-			split_point = (values_and_classes[i][0] + values_and_classes[i-1][0]) / 2
-			all_split_points.add(split_point)
-	sorted_split_points = sorted(list(all_split_points))
-	sorted_split_points.insert(0, -math.inf)
-	sorted_split_points.append(math.inf)
-	numeric_attributes_split_points[attribute_index] = sorted_split_points
-
+from .model import Model
+from copy import copy
 
 
 class RandomForest(Model):
-	def __init__(self, ntrees, random_state, x, y, numerical_attributes):
-		self.ntrees = ntrees
-		self.random_state = random_state
-		self.x = x
-		self.y = y
+	"""Random forest representation."""
 
-		self.trees = []
+	def __init__(self, ntrees, random_state, numerical_attributes_indexes=[]):
+		self.__trees = []
+		self.__ntrees = ntrees
+		self.__random_state = random_state
+		self.__numerical_attributes_indexes = numerical_attributes_indexes
 
-		all_attributes = [i for i in range(len(x[0]))]
+	@property
+	def trees(self):
+		return copy(self.__trees)
 
-		numeric_attributes = list(zip(*numerical_attributes))
-		numeric_attributes_indexes = [int(x) for x in numeric_attributes[1]]
+	def fit(self, x, y) -> None:
 
-		for a in all_attributes:
-			if a in numeric_attributes_indexes:
-				# treat numeric attributes:
-				values = x[:, a]
-				values_and_classes = list(zip(values, y))
-				compute_numeric_attribues_split_points(values_and_classes, a)
+		for i in range(self.__ntrees):
+			bootstrap = utils.bootstrap(x.shape[0], self.__random_state)
 
-			else:
-				# categoric attributes:
-				categoric_attribute_values[a] = list(set(x[:,a]))
+			tree = DecisionTree(self.__random_state, self.__numerical_attributes_indexes)
+			tree.fit(x[bootstrap, :], y[bootstrap])
 
-		for b in range(ntrees):
-			bootstrap = list(utils.bootstrap(len(self.x), self.random_state))
-			x_bootstrap_partition = self.x[bootstrap]
-			y_bootstrap_partition = self.y[bootstrap]
-			tree = DTree(x_bootstrap_partition, y_bootstrap_partition, self.random_state, all_attributes, numeric_attributes_indexes)
-			self.trees.append(tree)
+			self.__trees.append(tree)
 
+	def predict(self, x) -> list:
+		if len(self.__trees) == 0:
+			raise ValueError("You need to train the model first.")
 
-	def predict(self, instance):
-		"""
-		instance: List with the values of the attributes, in order.
-		"""
-		y = []
-		for tree in self.trees:
-			y.append(tree.predict(instance))
-		return utils.majority_voting(y)
+		y_pred = [self.__trees[i].predict(x) for i in range(len(self.__trees))]
+		y_pred = zip(*y_pred)
+
+		return [utils.get_majority_class(list(predictions)) for predictions in y_pred]
 
 
 
