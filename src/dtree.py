@@ -77,7 +77,7 @@ class DecisionTree(Model):
 			return Node(self.node_id, sety[0], None, {})
 
 		# There are no more attributes to choose from, so stop recursion
-		if x.shape[1] == 0:
+		if len(available_attributes) == 0:
 			return Node(self.node_id, utils.get_majority_class(y), None, {})
 
 		# Select the best attribute and if it is numerical, get threshold
