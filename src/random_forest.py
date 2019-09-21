@@ -25,7 +25,10 @@ class RandomForest(Model):
 			tree = DecisionTree(self.__random_state, self.__numerical_attributes_indexes)
 			tree.fit(x[bootstrap, :], y[bootstrap])
 
-			self.__trees.append(tree)
+			if len(self.__trees) == self.__ntrees:
+				self.__trees[i] = tree
+			else:
+				self.__trees.append(tree)
 
 	def predict(self, x) -> list:
 		if len(self.__trees) == 0:
