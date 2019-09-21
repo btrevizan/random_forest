@@ -87,6 +87,15 @@ class Scorer:
 
         return (2 * precision * recall) / (precision + recall)
 
+    def balanced_accuracy(self):
+        """Calculate balance accuracy.
+
+        :return: float
+        """
+        n, _ = self.cm.shape
+        recall = [self.recall(i) for i in range(n)]
+        return np.sum(recall) / n
+
     def __make(self):
         sety_true, counts_true = np.unique(self.y_true, return_counts=True)
         n_labels = len(sety_true)
