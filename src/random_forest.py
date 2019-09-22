@@ -1,9 +1,8 @@
 from src.dtree import DecisionTree
-from threading import Thread
 import src.utils as utils
 from .model import Model
 from copy import copy
-import os
+import numpy as np
 
 
 class RandomForest(Model):
@@ -41,15 +40,11 @@ class RandomForest(Model):
 			bootstrap = utils.bootstrap(x.shape[0], self.__random_state)
 			self.__trees[i].fit(x[bootstrap, :], y[bootstrap])
 
-	def predict(self, x) -> list:
+	def predict(self, x):
 		if len(self.__trees) == 0:
 			raise ValueError("You need to train the model first.")
 
 		y_pred = [self.__trees[i].predict(x) for i in range(len(self.__trees))]
 		y_pred = zip(*y_pred)
 
-		return [utils.get_majority_class(list(predictions)) for predictions in y_pred]
-
-
-
-
+		return np.array([utils.get_majority_class(list(predictions)) for predictions in y_pred])

@@ -12,12 +12,10 @@ class Scorer:
     """
 
     def __init__(self, y_true, y_pred):
-        self.y_true = y_true
-        self.y_pred = y_pred
         self.n = len(y_true)
         self.cm = None
 
-        self.__make()
+        self.__make(y_true, y_pred)
 
     def tp(self, label):
         """True positive (TP) of class 'label'."""
@@ -54,7 +52,8 @@ class Scorer:
         :return float
         """
         tp = self.tp(label)
-        return tp / (tp + self.fn(label))
+        fn = self.fn(label)
+        return tp / (tp + fn)
 
     def precision(self, label=1):
         """Calculate precision.
@@ -65,7 +64,8 @@ class Scorer:
         :return float
         """
         tp = self.tp(label)
-        return tp / (tp + self.fp(label))
+        fp = self.fp(label)
+        return tp / (tp + fp)
 
     def f1_score(self, label=0):
         """Calculate F1-Score for binary classification and micro-average F1-Score for multi-class.
@@ -96,17 +96,17 @@ class Scorer:
         recall = [self.recall(i) for i in range(n)]
         return np.sum(recall) / n
 
-    def __make(self):
-        sety_true, counts_true = np.unique(self.y_true, return_counts=True)
+    def __make(self, y_true, y_pred):
+        sety_true, counts_true = np.unique(y_true, return_counts=True)
         n_labels = len(sety_true)
 
         self.cm = np.zeros((n_labels, n_labels))
         for label_true, count_true in zip(sety_true, counts_true):
 
-            true_i = set(np.where(self.y_true == label_true)[0])
+            true_i = np.where(y_true == label_true)[0]
 
             for label_pred in sety_true:
-                prediction_i = set(np.where(self.y_pred == label_pred)[0])
-                self.cm[label_true, label_pred] = len(true_i.intersection(prediction_i))
+                prediction_i = np.where(y_pred == label_pred)[0]
+                self.cm[label_true, label_pred] = len(np.intersect1d(true_i, prediction_i))
 
         return self.cm
