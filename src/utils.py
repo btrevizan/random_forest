@@ -194,18 +194,24 @@ def load(dataset):
     data = read_csv(data_path, header=0)
 
     target = None
-    numerical_attributes = []
     attribute_names = []
+    attribute_values = {}
+    numerical_attributes = []
 
-    for feature in metadata['features']:
-        if feature['type'] == 'numeric':
-            numerical_attributes.append(int(feature['index']))
-            attribute_names.append(feature['name'])
-        elif feature['name'] == metadata['default_target_attribute']:
-            target = int(feature['index'])
-        else:
-            attribute_names.append(feature['name'])
+    for attribute in metadata['features']:
+        attr_index = int(attribute['index'])
+        attribute_names.append(attribute['name'])
 
+        if attribute['type'] == 'numeric':
+            numerical_attributes.append(attr_index)
+            attribute_names.append(attribute['name'])
+        else:  # is categorical
+            attribute_values[attr_index] = attribute['distr'][0]
+
+            if attribute['name'] == metadata['default_target_attribute']:
+                target = attr_index
+
+    attribute_names.remove(metadata['default_target_attribute'])
     y = data.iloc[:, target]
 
     # Encode classes to integers
@@ -217,7 +223,7 @@ def load(dataset):
     y = y.apply(lambda e: sety[e], convert_dtype=False).values
     x = concat([data.iloc[:, :target], data.iloc[:, target + 1:]], axis=1, sort=False).values
 
-    return numerical_attributes, attribute_names, x, y
+    return numerical_attributes, attribute_names, attribute_values, x, y
 
 
 def get_majority_class(y_pred):

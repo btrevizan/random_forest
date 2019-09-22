@@ -28,18 +28,22 @@ Node = namedtuple('Node', ['id', 'value', 'rule', 'children'])
 class DecisionTree(Model):
 	"""Represent a decision tree."""
 
-	def __init__(self, random_state, numerical_attributes_indexes=[]):
+	def __init__(self, random_state, numerical_attributes_indexes=[], attribute_values={}):
 		"""Initialize the decision tree. It does not fit the model. For that, you need to call fit(x, y).
+
+		:param random_state: instance of numpy.random.RandomState
+			Seed for random generator.
 
 		:param numerical_attributes_indexes: list (default [])
 			List of numeric attributes' index.
 
-		:param random_state: instance of numpy.random.RandomState
-			Seed for random generator.
+		:param attribute_values: dict {int: list} (optional)
+			{attribute_index: attribute_unique_values}
 		"""
 		self.__tree = None
 		self.__node_id = 0
 		self.__random_state = random_state
+		self.__attribute_values = attribute_values
 		self.__numerical_attributes_indexes = numerical_attributes_indexes
 
 	@property
@@ -90,16 +94,21 @@ class DecisionTree(Model):
 			rule = self.__get_numerical_rule(threshold)
 			attribute_values = np.zeros((x.shape[0],))
 			attribute_values[rule(x[:, attribute])] = 1
+			attribute_unique_values = [True, False]
 		else:
 			rule = self.__get_categorical_rule()
 			attribute_values = x[:, attribute]
+			attribute_unique_values = self.__attribute_values[attribute]
 
 		children = {}
-		attribute_unique_values = np.unique(attribute_values)
 
 		for value in attribute_unique_values:
 			attr_value_indexes = np.where(attribute_values == value)[0]
-			children[value] = self.__make_node(x[attr_value_indexes, :], y[attr_value_indexes], new_available_attributes)
+
+			if len(attr_value_indexes):
+				children[value] = self.__make_node(x[attr_value_indexes, :], y[attr_value_indexes], new_available_attributes)
+			else:
+				children[value] = Node(self.node_id, utils.get_majority_class(y), None, {})
 
 		return Node(self.node_id, attribute, rule, children)
 
