@@ -11,7 +11,8 @@ class Scorer:
         Predicted labels.
     """
 
-    def __init__(self, y_true, y_pred):
+    def __init__(self, y_true, y_pred, n_labels):
+        self.n_labels = n_labels
         self.n = len(y_true)
         self.cm = None
 
@@ -97,15 +98,15 @@ class Scorer:
         return np.sum(recall) / n
 
     def __make(self, y_true, y_pred):
-        sety_true, counts_true = np.unique(y_true, return_counts=True)
-        n_labels = len(sety_true)
+        _, counts_true = np.unique(y_true, return_counts=True)
+        labels = list(range(self.n_labels))
 
-        self.cm = np.zeros((n_labels, n_labels))
-        for label_true, count_true in zip(sety_true, counts_true):
+        self.cm = np.zeros((self.n_labels, self.n_labels))
+        for label_true, count_true in zip(labels, counts_true):
 
             true_i = np.where(y_true == label_true)[0]
 
-            for label_pred in sety_true:
+            for label_pred in labels:
                 prediction_i = np.where(y_pred == label_pred)[0]
                 self.cm[label_true, label_pred] = len(np.intersect1d(true_i, prediction_i))
 

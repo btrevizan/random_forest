@@ -155,6 +155,7 @@ def cross_validate(model, x, y, k, random_state):
         Test metric for each fold.
     """
     metrics = []
+    n_labels = len(np.unique(y))
 
     for train_i, test_i in stratified_split(y, k, random_state):
         x_train = x[train_i, :]
@@ -166,7 +167,7 @@ def cross_validate(model, x, y, k, random_state):
         model.fit(x_train, y_train)
         y_pred = model.predict(x_test)
 
-        scorer = Scorer(y_test, y_pred)
+        scorer = Scorer(y_test, y_pred, n_labels)
         metrics.append(scorer.f1_score())
 
     return metrics
