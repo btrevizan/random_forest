@@ -54,7 +54,7 @@ def run(dataset, seed, ntrees, n_folds, n_repeats, dataset_results_path):
         for f1_score in results:
             file.write("{}\n".format(f1_score))
 
-    time_file_path = os.path.join(dataset_results_path, '../summary.csv')
+    time_file_path = os.path.join(dataset_results_path, 'summary.csv')
     with open(time_file_path, 'a') as file:
         file.write('{},{},{},{},{},{},{}\n'.format(dataset,
                                                    np.mean(results),
