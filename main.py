@@ -70,8 +70,6 @@ def run(dataset, seed, ntrees, n_folds, n_repeats, dataset_results_path):
     #     dot.render(cleanup=True)
 
     print("Done")
-
-
     print("\t\tTime elapsed: {}".format(readable_time(start, stop)))
 
 

@@ -6,13 +6,16 @@ import numpy as np
 import math
 
 
-Node = namedtuple('Node', ['id', 'value', 'rule', 'children'])
+Node = namedtuple('Node', ['id', 'info_gain', 'value', 'rule', 'children'])
 """Node representation as a named tuple.
 
 :attr id: int
 	Node's id number.
 	
-:attr attribute: int
+:attr info_gain: float
+	Node's information gain.
+	
+:attr value: int
 	Attribute's index or predicted class for leafs.
 
 :attr rule: function
@@ -28,7 +31,7 @@ Node = namedtuple('Node', ['id', 'value', 'rule', 'children'])
 class DecisionTree(Model):
 	"""Represent a decision tree."""
 
-	def __init__(self, random_state, numerical_attributes_indexes=[], attribute_values={}):
+	def __init__(self, random_state, numerical_attributes_indexes=[], attribute_values={}, benchmark=False):
 		"""Initialize the decision tree. It does not fit the model. For that, you need to call fit(x, y).
 
 		:param random_state: instance of numpy.random.RandomState
@@ -39,9 +42,13 @@ class DecisionTree(Model):
 
 		:param attribute_values: dict {int: list} (optional)
 			{attribute_index: attribute_unique_values}
+
+		:param benchmark: bool (default False)
+			Whether the decision tree is a benchmark or not.
 		"""
 		self.__tree = None
 		self.__node_id = 0
+		self.__benchmark = benchmark
 		self.__random_state = random_state
 		self.__attribute_values = attribute_values
 		self.__numerical_attributes_indexes = numerical_attributes_indexes
@@ -78,14 +85,14 @@ class DecisionTree(Model):
 
 		# Subset has only one class, so stop recursion
 		if len(sety) == 1:
-			return Node(self.node_id, sety[0], None, {})
+			return Node(self.node_id, 1, sety[0], None, {})
 
 		# There are no more attributes to choose from, so stop recursion
 		if len(available_attributes) == 0:
-			return Node(self.node_id, utils.get_majority_class(y), None, {})
+			return Node(self.node_id, 1, utils.get_majority_class(y), None, {})
 
 		# Select the best attribute and if it is numerical, get threshold
-		attribute, threshold = self.__select_attribute(x, y, available_attributes)
+		attribute, threshold, info_gain = self.__select_attribute(x, y, available_attributes)
 		new_available_attributes = copy(available_attributes)
 		new_available_attributes.remove(attribute)
 
@@ -108,14 +115,18 @@ class DecisionTree(Model):
 			if len(attr_value_indexes):
 				children[value] = self.__make_node(x[attr_value_indexes, :], y[attr_value_indexes], new_available_attributes)
 			else:
-				children[value] = Node(self.node_id, utils.get_majority_class(y), None, {})
+				children[value] = Node(self.node_id, 1, utils.get_majority_class(y), None, {})
 
-		return Node(self.node_id, attribute, rule, children)
+		return Node(self.node_id, info_gain, attribute, rule, children)
 
 	def __select_attribute(self, x, y, available_attributes):
 		# Select √m attributes randomly
-		n_possible_attr = math.sqrt(len(available_attributes))
-		possible_attributes = self.__random_state.choice(available_attributes, math.ceil(n_possible_attr), replace=False)
+		if self.__benchmark:
+			possible_attributes = available_attributes
+		else:
+			n_possible_attr = math.sqrt(len(available_attributes))
+			possible_attributes = self.__random_state.choice(available_attributes, math.ceil(n_possible_attr), replace=False)
+
 		class_entropy = utils.entropy(y)
 
 		# Compute information gain for each attribute and get the maximum gain index
@@ -131,7 +142,7 @@ class DecisionTree(Model):
 			thresholds.append(threshold)
 
 		max_gain_i = np.argmax(gains)
-		return possible_attributes[max_gain_i], thresholds[max_gain_i]
+		return possible_attributes[max_gain_i], thresholds[max_gain_i], gains[max_gain_i]
 
 	def __numerical_information_gain(self, class_entropy, x, y):
 		threshold = None
@@ -165,7 +176,17 @@ class DecisionTree(Model):
 		if not node:
 			node = self.__tree
 
-		label = (attr_names[node.value] if attr_names else str(node.value)) if len(node.children) else str(node.value)
+		if len(node.children):
+			if attr_names:
+				label = "{}\nInfoGain: {}".format(attr_names[node.value], round(node.info_gain, 3))
+			else:
+				label = str(node.value)
+		else:
+			items = attr_names.items()
+			items = sorted(items, key=lambda x: x[0])
+			item = items[-1]
+			label = "{} = {}".format(item[1], node.value)
+
 		dot.node(str(node.id), label)
 
 		for key, child in node.children.items():

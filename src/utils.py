@@ -6,7 +6,7 @@ import numpy as np
 import json
 
 
-datasets = ['credit_g', 'spambase', 'vertebra_column', 'wine']
+datasets = ['credit_g', 'spambase', 'vertebra_column', 'wine', 'benchmark']
 
 
 def entropy(values):
@@ -195,24 +195,22 @@ def load(dataset):
     data = read_csv(data_path, header=0)
 
     target = None
-    attribute_names = []
+    attribute_names = {}
     attribute_values = {}
     numerical_attributes = []
 
     for attribute in metadata['features']:
         attr_index = int(attribute['index'])
-        attribute_names.append(attribute['name'])
+        attribute_names[attr_index] = attribute['name']
 
         if attribute['type'] == 'numeric':
             numerical_attributes.append(attr_index)
-            attribute_names.append(attribute['name'])
         else:  # is categorical
-            attribute_values[attr_index] = attribute['distr'][0]
+            attribute_values[attr_index] = np.unique(attribute['distr'][0])
 
             if attribute['name'] == metadata['default_target_attribute']:
                 target = attr_index
 
-    attribute_names.remove(metadata['default_target_attribute'])
     y = data.iloc[:, target]
 
     # Encode classes to integers

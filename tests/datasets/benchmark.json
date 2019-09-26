@@ -1,0 +1,75 @@
+{
+    "default_target_attribute": "Joga",
+    "row_id_attribute": null,
+    "ignore_attribute": null,
+    "features": [
+        {
+            "name": "Joga",
+            "index": "4",
+            "type": "nominal",
+            "distinct": "2",
+            "missing": "0",
+            "target": "1",
+            "distr": [
+                [
+                    "Sim",
+                    "Nao"
+                ]
+            ]
+        },
+        {
+            "name": "Tempo",
+            "index": "0",
+            "type": "nominal",
+            "distinct": "3",
+            "missing": "0",
+            "distr": [
+                [
+                    "Ensolarado",
+                    "Nublado",
+                    "Chuvoso"
+                ]
+            ]
+        },
+        {
+            "name": "Temperatura",
+            "index": "1",
+            "type": "nominal",
+            "distinct": "3",
+            "missing": "0",
+            "distr": [
+                [
+                    "Quente",
+                    "Amena",
+                    "Fria"
+                ]
+            ]
+        },
+        {
+            "name": "Umidade",
+            "index": "2",
+            "type": "nominal",
+            "distinct": "2",
+            "missing": "0",
+            "distr": [
+                [
+                    "Alta",
+                    "Normal"
+                ]
+            ]
+        },
+        {
+            "name": "Ventoso",
+            "index": "3",
+            "type": "nominal",
+            "distinct": "2",
+            "missing": "0",
+            "distr": [
+                [
+                    "Falso",
+                    "Verdadeiro"
+                ]
+            ]
+        }
+    ]
+}
