@@ -1,2 +1,0 @@
-dataset,mean_score,std_score,ntrees,n_folds,n_repeats,elapsed_seconds
-spambase,0.23723484873970727,0.03498014110988374,3,10,2,3241
