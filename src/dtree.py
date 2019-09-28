@@ -81,7 +81,7 @@ class DecisionTree(Model):
 		return self.__find_leaf(instance, node.children[value])
 
 	def __make_node(self, x, y, available_attributes):
-		sety = np.unique(y)
+		sety, y_counts = np.unique(y, return_counts=True)
 
 		# Subset has only one class, so stop recursion
 		if len(sety) == 1:
@@ -90,6 +90,17 @@ class DecisionTree(Model):
 		# There are no more attributes to choose from, so stop recursion
 		if len(available_attributes) == 0:
 			return Node(self.node_id, 1, utils.get_majority_class(y), None, {})
+
+		# Cut the tree if the number of instances is below a threshold
+		if y.size <= 50:
+			print("Cut tree with threshold.")
+			return Node(self.node_id, 1, utils.get_majority_class(y), None, {})
+
+		# Cut the tree if the majority class has 75% of the instances
+		for _, count in zip(sety, y_counts):
+			if count / y.size >= 0.75:
+				print("Cut tree by majority.")
+				return Node(self.node_id, 1, utils.get_majority_class(y), None, {})
 
 		# Select the best attribute and if it is numerical, get threshold
 		attribute, threshold, info_gain = self.__select_attribute(x, y, available_attributes)
