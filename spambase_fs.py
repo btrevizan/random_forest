@@ -8,7 +8,7 @@ data = read_csv('tests/datasets/spambase.csv', header=[0], index_col=None)
 x, y = data.iloc[:, :-1], data.iloc[:, -1]
 
 estimator = SVC(kernel='linear', gamma='auto', random_state=np.random.RandomState(22))
-selector = RFE(estimator, 6)
+selector = RFE(estimator)
 selector = selector.fit(x, y)
 
 selected_mask = selector.support_
