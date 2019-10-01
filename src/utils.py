@@ -6,7 +6,7 @@ import numpy as np
 import json
 
 
-datasets = ['credit_g', 'spambase', 'vertebra_column', 'wine', 'benchmark']
+datasets = ['credit_g', 'spambase_processed', 'vertebra_column', 'wine', 'benchmark']
 
 
 def entropy(values):
@@ -185,7 +185,7 @@ def load(dataset):
     default_path = 'tests/datasets/'
 
     if dataset not in datasets:
-        raise ValueError('{} does not exist. The option are credit_g, spambase, vertebra_column, wine.'.format(dataset))
+        raise ValueError('{} does not exist. The option are credit_g, spambase_processed, vertebra_column, wine.'.format(dataset))
 
     metadata_path = path.join(default_path, '{}.json'.format(dataset))
     with open(metadata_path, 'r') as file:
