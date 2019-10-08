@@ -41,8 +41,10 @@ def run(dataset, seed, ntrees, n_folds, n_repeats, dataset_results_path):
 
     results = []
     for i in range(n_repeats):
+        start2 = int(time())
         print("\t\t#{} {}-fold CV iteration".format(i, n_folds))
         results += utils.cross_validate(random_forest, x, y, n_folds, random_state)
+        print("\t\t" + readable_time(start2, int(time())))
 
     stop = int(time())
     print("\t\tSaving results...", end=" ")
